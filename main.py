@@ -1,7 +1,8 @@
 import argparse
-import pandas as pd
 import json
 import os
+
+import pandas as pd
 from sortedcontainers import SortedSet
 
 basePath = r"/Users/ofirrubin/OOP_2021/Assignments/Ex1/data/Ex1_input/"
@@ -11,6 +12,7 @@ CALLS_PATH = os.path.join(basePath, r"Ex1_Calls", r"Calls_d.csv")
 
 
 class Elevator:
+
     def __init__(self, _id, _speed, _minFloor, _maxFloor, _closeTime, _openTime, _startTime, _stopTime):
         self.id = _id
         self.speed = _speed
@@ -21,10 +23,20 @@ class Elevator:
         self.startTime = _startTime
         self.stopTime = _stopTime
 
+        self.calls_inWay = SortedSet()
+        self.calls_aWay = SortedSet()
+        self.last_call = None
+
+    def add_call(self):
+        pass
+
+    def hyp_add(self):
+        pass
+
     def __repr__(self):
         return "Elevator(id: " + str(self.id) + " speed:" + str(self.speed) + " min:" + str(self.minFloor) + " max:" \
                + str(self.maxFloor) + " close:" + str(self.closeTime) + " open:" + str(self.openTime) \
-                + " start:" + str(self.startTime) + " stop:" + str(self.stopTime) + ")"
+               + " start:" + str(self.startTime) + " stop:" + str(self.stopTime) + ")"
 
 
 class Building:
@@ -72,7 +84,7 @@ class LiftAlgo:
             with open(self.paths['calls'], "r") as src:
                 data = src.read()
             out.write(data)
-        self.df = pd.read_csv(self.paths['out'], usecols=["time", "src", "dest", "ele"])
+        self.df = pd.read_csv(self.paths['out'])  # , usecols=["time", "src", "dest", "ele"]
 
     def start(self):
         # (re)load data from file
@@ -82,11 +94,21 @@ class LiftAlgo:
         if self.df['src'].min() < self.b.minFloor or self.df['dest'].min() < self.b.minFloor or\
            self.df['src'].max() > self.b.maxFloor or self.df['dest'].max() > self.b.maxFloor:
             raise ValueError("There is a call out of range")
+        # Create list calls
+
+        # Sort all calls in call order
+
+        # Update dataframe selected elevator for each call
+
+        #
         pass
 
     def export(self):
         if self.df is None:
             return
+        if os.path.isfile(self.paths['out']):
+            os.remove(self.paths['out'])
+        self.df.to_csv(self.paths['out'], index=False, header=False)
 
 
 def main():
@@ -95,10 +117,10 @@ def main():
     parser.add_argument('-calls', type=str, help="Calls path")
     parser.add_argument('-output', type=str, help="Output path")
     args = parser.parse_args()
-    print(args)
     algo = LiftAlgo(args.building, args.calls, args.output)
     try:
         algo.start()
+        algo.export()
     except ValueError as e:
         print("An error occured: ", e)
         exit(-1)
