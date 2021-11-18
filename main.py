@@ -12,7 +12,6 @@ CALLS_PATH = os.path.join(basePath, r"Ex1_Calls", r"Calls_d.csv")
 
 
 class Elevator:
-
     def __init__(self, _id, _speed, _minFloor, _maxFloor, _closeTime, _openTime, _startTime, _stopTime):
         self.id = _id
         self.speed = _speed
@@ -23,15 +22,46 @@ class Elevator:
         self.startTime = _startTime
         self.stopTime = _stopTime
 
-        self.calls_inWay = SortedSet()
-        self.calls_aWay = SortedSet()
-        self.last_call = None
+        self.activities = {}
 
-    def add_call(self):
-        pass
+    def get_time(self, src, dest, stops=1):
+        # Assuming src and dest are valid inputs, time calculated as described in the Google Docs
+        return self.closeTime + self.startTime + (abs(dest - src) / self.speed) + self.stopTime + self.openTime
 
-    def hyp_add(self):
-        pass
+    def get_n_calls(self):
+        return len(self.activities)
+
+    def is_overlaps(self, call_a, call_b):
+        # Input must be valid, existing keys
+        if (call_a["time"] < call_b["time"] and call_a["directEndTime"] < call_b["directEndTime"]) or \
+                (call_b["time"] < call_a["time"] and call_b["directEndTime"] < call_a["directEndTime"]):
+            return True
+        return False
+
+    def greedy_activity_selector(self, calls_dict: dict):
+        if len(calls_dict) == 0:
+            return {}
+        for call in calls_dict.values():  # Calculate direct finish time.
+            call["directEndTime"] = call["time"] + self.get_time(call["src"], call["dest"])
+
+        # We are removing calls that overlaps calls already assigned to this elevator.
+        calls = {}
+        for i, (ind, new_call) in enumerate(calls_dict):
+            if True in [self.is_overlaps(new_call, existing_call) for existing_call in self.activities]:
+                continue
+            else:
+                calls[ind] = new_call
+        calls += self.activities
+
+        # Sort by finish time
+        calls = dict(sorted(calls.items(), key=lambda item: item[1]["directEndTime"]))
+        activities = [calls[0]]
+        last_selected = calls[0]
+        for call in calls:
+            if call["time"] >= last_selected["directEndTime"]:
+                activities.append(call)
+                last_selected = call
+        return activities
 
     def __repr__(self):
         return "Elevator(id: " + str(self.id) + " speed:" + str(self.speed) + " min:" + str(self.minFloor) + " max:" \
@@ -55,14 +85,11 @@ class Building:
         return "Building(" + "min:" + str(self.minFloor) + ", max:" + str(self.maxFloor) + ", elevators:" \
                + self.elevators.__repr__() + ")"
 
+    def __iter__(self):
+        return self.elevators.__iter__()
 
-class Lift:
-    def __init__(self, ele: Elevator):
-        self.ele = ele
-        self.in_way = SortedSet()
-        self.an_way = SortedSet()
-
-    # def add_call(self, call: Call):
+    def __getitem__(self, x):
+        return self.elevators[x]
 
 
 class LiftAlgo:
@@ -86,26 +113,51 @@ class LiftAlgo:
             out.write(data)
         self.df = pd.read_csv(self.paths['out'])  # , usecols=["time", "src", "dest", "ele"]
 
+    def set_ele(self, ind, ele_id):
+        self.df.at[ind, 'ele'] = ele_id
+
+    def __fill_all(self, ele_id):  # Fill all elevators with specific id, for single elevator use.
+        for ind, val in self.df.iterrows():
+            self.set_ele(ind, ele_id)
+
     def start(self):
         # (re)load data from file
         self.__set_building()
         self.__set_dataframe()
-
-        if self.df['src'].min() < self.b.minFloor or self.df['dest'].min() < self.b.minFloor or\
-           self.df['src'].max() > self.b.maxFloor or self.df['dest'].max() > self.b.maxFloor:
+        print(self.b)
+        if self.df['src'].min() < self.b.minFloor or self.df['dest'].min() < self.b.minFloor or \
+                self.df['src'].max() > self.b.maxFloor or self.df['dest'].max() > self.b.maxFloor:
             raise ValueError("There is a call out of range")
         # Create list calls
+        if len(self.b.elevators) == 0:
+            raise ValueError("There are no available elevators")
+        elif len(self.b.elevators) == 1:
+            self.__fill_all(self.b.elevators[0].id)
+        else:
+            max_activities = []
+            max_ele = None
+            unassigned = self.df.to_dict('index')
 
-        # Sort all calls in call order
-
-        # Update dataframe selected elevator for each call
-
-        #
-        pass
+            while len(unassigned) > 0:
+                for e in self.b.elevators:
+                    ele_max = e.greedy_activity_selector(unassigned)
+                    if len(ele_max) > len(max_activities) or (len(ele_max) == len(max_activities) and
+                                                              type(max_ele) is not None and
+                                                              e.get_n_calls() < max_ele.get_n_calls()):
+                        max_activities = ele_max
+                        max_ele = e
+                for e in self.b.elevators:
+                    if e.id == max_ele.id:
+                        e.activities.append(max_activities)
+                        break
+                unassigned.remove(max_activities)
 
     def export(self):
         if self.df is None:
             return
+        for e in self.b.elevators:
+            for i, (ind, c) in enumerate(e.activities):
+                self.set_ele(ind, e.id)
         if os.path.isfile(self.paths['out']):
             os.remove(self.paths['out'])
         self.df.to_csv(self.paths['out'], index=False, header=False)
