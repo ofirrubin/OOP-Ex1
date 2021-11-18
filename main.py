@@ -52,7 +52,6 @@ class Elevator:
             else:
                 calls[ind] = new_call
         calls = calls | self.activities
-
         # Sort by finish time
         calls = dict(sorted(calls.items(), key=lambda item: item[1]["directEndTime"]))
         activities = {}
