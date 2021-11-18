@@ -3,7 +3,6 @@ import json
 import os
 
 import pandas as pd
-from sortedcontainers import SortedSet
 
 basePath = r"/Users/ofirrubin/OOP_2021/Assignments/Ex1/data/Ex1_input/"
 OUTPUT_PATH = os.path.join(basePath, r"Ex1_Calls", r"out.csv")
@@ -52,6 +51,7 @@ class Elevator:
             else:
                 calls[ind] = new_call
         calls = calls | self.activities
+
         # Sort by finish time
         calls = dict(sorted(calls.items(), key=lambda item: item[1]["directEndTime"]))
         activities = {}
@@ -63,6 +63,7 @@ class Elevator:
             if call["time"] >= last_selected["directEndTime"]:
                 activities[ind] = call
                 last_selected = call
+        activities = LiftAlgo.remove_calls(activities, self.activities)
         return activities
 
     def __repr__(self):
@@ -122,12 +123,35 @@ class LiftAlgo:
         for ind, val in self.df.iterrows():
             self.set_ele(ind, ele_id)
 
+    def spread_equally(self, calls):
+        return
+
     @staticmethod
-    def __remove_calls(calls, calls_to_remove):
+    def remove_calls(calls, calls_to_remove):
         for key in calls_to_remove:
             if key in calls:
                 del calls[key]
         return calls
+
+    def greedy_algo(self):
+        unassigned = self.df.to_dict('index')
+        while len(unassigned) > 0:
+            max_activities = []
+            max_ele = None
+            for e in self.b.elevators:
+                ele_max = e.greedy_activity_selector(unassigned)
+                if len(ele_max) > len(max_activities) or (len(ele_max) == len(max_activities) and
+                                                          type(max_ele) is not None and
+                                                          e.get_n_calls() < max_ele.get_n_calls()):
+                    max_activities = ele_max
+                    max_ele = e
+            if len(max_activities) == 0:
+                return self.spread_equally(unassigned)
+            for e in self.b.elevators:
+                if e.id == max_ele.id:
+                    e.activities = e.activities | max_activities
+                    break
+            unassigned = LiftAlgo.remove_calls(unassigned, max_activities)
 
     def start(self):
         # (re)load data from file
@@ -142,23 +166,7 @@ class LiftAlgo:
         elif len(self.b.elevators) == 1:
             self.__fill_all(self.b.elevators[0].id)
         else:
-            max_activities = []
-            max_ele = None
-            unassigned = self.df.to_dict('index')
-
-            while len(unassigned) > 0:
-                for e in self.b.elevators:
-                    ele_max = e.greedy_activity_selector(unassigned)
-                    if len(ele_max) > len(max_activities) or (len(ele_max) == len(max_activities) and
-                                                              type(max_ele) is not None and
-                                                              e.get_n_calls() < max_ele.get_n_calls()):
-                        max_activities = ele_max
-                        max_ele = e
-                for e in self.b.elevators:
-                    if e.id == max_ele.id:
-                        e.activities = e.activities | max_activities
-                        break
-                unassigned = LiftAlgo.__remove_calls(unassigned, max_activities)
+            self.greedy_algo()
 
     def export(self):
         if self.df is None:
