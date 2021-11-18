@@ -46,20 +46,23 @@ class Elevator:
 
         # We are removing calls that overlaps calls already assigned to this elevator.
         calls = {}
-        for i, (ind, new_call) in enumerate(calls_dict):
-            if True in [self.is_overlaps(new_call, existing_call) for existing_call in self.activities]:
+        for ind, new_call in calls_dict.items():
+            if True in [self.is_overlaps(new_call, existing_call) for existing_call in self.activities.values()]:
                 continue
             else:
                 calls[ind] = new_call
-        calls += self.activities
+        calls = calls | self.activities
 
         # Sort by finish time
         calls = dict(sorted(calls.items(), key=lambda item: item[1]["directEndTime"]))
-        activities = [calls[0]]
-        last_selected = calls[0]
-        for call in calls:
+        activities = {}
+        for ind, call in calls.items():
+            activities[ind] = call
+            last_selected = calls[ind]
+            break
+        for ind, call in calls.items():
             if call["time"] >= last_selected["directEndTime"]:
-                activities.append(call)
+                activities[ind] = call
                 last_selected = call
         return activities
 
@@ -120,11 +123,17 @@ class LiftAlgo:
         for ind, val in self.df.iterrows():
             self.set_ele(ind, ele_id)
 
+    @staticmethod
+    def __remove_calls(calls, calls_to_remove):
+        for key in calls_to_remove:
+            if key in calls:
+                del calls[key]
+        return calls
+
     def start(self):
         # (re)load data from file
         self.__set_building()
         self.__set_dataframe()
-        print(self.b)
         if self.df['src'].min() < self.b.minFloor or self.df['dest'].min() < self.b.minFloor or \
                 self.df['src'].max() > self.b.maxFloor or self.df['dest'].max() > self.b.maxFloor:
             raise ValueError("There is a call out of range")
@@ -148,15 +157,15 @@ class LiftAlgo:
                         max_ele = e
                 for e in self.b.elevators:
                     if e.id == max_ele.id:
-                        e.activities.append(max_activities)
+                        e.activities = e.activities | max_activities
                         break
-                unassigned.remove(max_activities)
+                unassigned = LiftAlgo.__remove_calls(unassigned, max_activities)
 
     def export(self):
         if self.df is None:
             return
         for e in self.b.elevators:
-            for i, (ind, c) in enumerate(e.activities):
+            for ind, c in e.activities.items():
                 self.set_ele(ind, e.id)
         if os.path.isfile(self.paths['out']):
             os.remove(self.paths['out'])
