@@ -12,16 +12,23 @@ Then I had to think of a way of parallel calls, which I chose to solve by lookin
 How to run;
 Please make sure you have the packages described at requirements.txt,
 you might install them by the following command with pip:
+
+
 `pip install -r requirements.txt`
 
 **The program was tested using python 3.9 ONLY**
 
 Then you can run single file and case using the following syntax:
+
+
 **Use the script name instead of `<ProgName>.py`**
 
-
 `python <ProgName>.py <Building.json> <Calls.csv> <Out.csv>`
+
+
 For additional help you might use the following command:
+
+
 `python <ProgName>.py`
 
 
