@@ -61,7 +61,7 @@ We will choose the elevator with the most lowest usage at this time frame which 
 # Algorithm:
 //First we want to make the most calls in a row, for that I'm using the Activity Selection Algorithm described above.
 
-#Selection-Algo(unassigned calls, elevators):
+# Selection-Algo(unassigned calls, elevators):
 Make a list of unassigned calls.
 Make a variable to save the elevator that can do the most activities at the time, and the activities that can be done in that time (v1, v2 respectively).
 While there are calls left:
@@ -72,13 +72,13 @@ While there are calls left:
   If we couldn't do any additional activities return Spread-Calls(unassigned calls)
 
 // We want to interrupt the least so find that elevator for each call
-#Spread-Calls(unassigned calls, elevators):
+# Spread-Calls(unassigned calls, elevators):
 For each call k:
   For each elevator:
     (minT, minEl) => Check how much time is the elevator been used in the time frame of call k. If it is the lowest of any checked so far save the time and the elevator.
   Add the call to the selected elevator and update the calls.
   
-#Export():
+# Export():
 For each elevator, go through her assigned activities:
   For each activity update its assigned elevator in the output file.
     
