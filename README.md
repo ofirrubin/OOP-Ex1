@@ -67,6 +67,7 @@ Make a variable to save the elevator that can do the most activities at the time
 While there are calls left:
   For each elevator:
     Run with Activity-Selection-Algorithm to find what are the activities that can be done in a row, the most at the given time.
+    Note that while running Activity-Selection-Algorithm we consider the activities assigned to it already to make sure it doesn't interrupt with them, we are looking for additional activities - not in place.
       If the algorithm gave us most calls that can be done than the highest we have so far, save the elevator as the best for most and the tasks it can do at this time (v1 and v2 respectively)
   Assign the calls (v2) to elevator that can do the most (v1) and remove the calls from unassigned calls.
   If we couldn't do any additional activities return Spread-Calls(unassigned calls)
