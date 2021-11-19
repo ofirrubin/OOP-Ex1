@@ -240,6 +240,8 @@ def main():
             algo.export()
         except ValueError as e:
             print("An error occured: ", e)
+            if os.path.isfile(args[2]):
+                os.remove(args[2])
             exit(-1)
         except FileNotFoundError as e:
             print("File not found: ", e)
