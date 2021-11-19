@@ -6,7 +6,8 @@ Elevator Simulator
 Abstract:
 At first I thought I should simulate possibilities using the online algorithm, but in a second thought
 I figured it's the same exact problem we learned at the Algorithms course:
-A greedy algorithm named Greedy Activity Selector which is described at the attached files.
+A greedy algorithm named Greedy Activity Selector which is as described here:
+![](/Users/ofirrubin/Desktop/activity selection algorithm.png) 
 Then I had to think of a way of parallel calls, which I chose to solve by looking at the elevator usage at each period of time.
 
 How to run;
