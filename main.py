@@ -1,13 +1,8 @@
-import argparse
+import sys
 import json
 import os
 
 import pandas as pd
-
-basePath = r"/Users/ofirrubin/OOP_2021/Assignments/Ex1/data/Ex1_input/"
-OUTPUT_PATH = os.path.join(basePath, r"Ex1_Calls", r"out.csv")
-BUILDING_PATH = os.path.join(basePath, r"Ex1_Buildings", r"B5.json")
-CALLS_PATH = os.path.join(basePath, r"Ex1_Calls", r"Calls_d.csv")
 
 
 class Elevator:
@@ -56,13 +51,6 @@ class Elevator:
         calls = dict(sorted(calls.items(), key=lambda item: item[1]["directEndTime"]))
         activities = {}
 
-        # Not pythonic by easiest and safest way I think of getting the
-        # first element into new dict + adding the value to another vars
-        """for ind, call in calls.items():
-            activities[ind] = call
-            last_selected = calls[ind]
-            break
-        """
         first_ind = list(calls.keys())[0]
         activities[first_ind] = calls[first_ind]
         last_selected = calls[first_ind]
@@ -223,22 +211,42 @@ class LiftAlgo:
         self.df.to_csv(self.paths['out'], index=False, header=False)
 
 
+def print_help():
+    print("Lift Algorithm")
+    print("Please use the following syntax:")
+    print("ProgName <Building.json> <Calls.csv> <output.csv>")
+    print("""Where:
+     Ex1 is the program name
+     <Building.json> is valid as described at the task, json file.
+     <Calls.csv> is a valid csv using the columns <elevatorCall,time,src,dest,status,ele>
+     where elevatorCall is str, time is int, src is int, dest is int, status is boolean int <0 = False, 1= True>
+     status is ignored thus doesn't mather, ele is int>
+     All inputs must be valid.
+     <output.csv> is the output file and can be in any name but will be exported in the format of .csv
+          """)
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Lift Offline Algorithm")
-    parser.add_argument('-building', type=str, help="Building path")
-    parser.add_argument('-calls', type=str, help="Calls path")
-    parser.add_argument('-output', type=str, help="Output path")
-    args = parser.parse_args()
-    algo = LiftAlgo(args.building, args.calls, args.output)
-    try:
-        algo.start()
-        algo.export()
-    except ValueError as e:
-        print("An error occured: ", e)
-        exit(-1)
-    except FileNotFoundError as e:
-        print("File not found: ", e)
-        exit(-1)
+    args = sys.argv[1:]
+    if len(args) == 0:
+        print_help()
+    elif len(args) != 3:
+        print("Invalid syntax, use the help:")
+        print_help()
+    else:
+        algo = LiftAlgo(args[0], args[1], args[2])
+        try:
+            algo.start()
+            algo.export()
+        except ValueError as e:
+            print("An error occured: ", e)
+            exit(-1)
+        except FileNotFoundError as e:
+            print("File not found: ", e)
+            exit(-1)
+        except Exception as e:
+            print("Unexpected error accured, please report back with the following exception\n", e)
+            exit(-1)
 
 
 if __name__ == "__main__":
