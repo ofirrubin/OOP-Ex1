@@ -55,14 +55,23 @@ class Elevator:
         # Sort by finish time
         calls = dict(sorted(calls.items(), key=lambda item: item[1]["directEndTime"]))
         activities = {}
-        for ind, call in calls.items():
+
+        # Not pythonic by easiest and safest way I think of getting the
+        # first element into new dict + adding the value to another vars
+        """for ind, call in calls.items():
             activities[ind] = call
             last_selected = calls[ind]
             break
+        """
+        first_ind = list(calls.keys())[0]
+        activities[first_ind] = calls[first_ind]
+        last_selected = calls[first_ind]
+        # By the activity selector greedy algorithm:
         for ind, call in calls.items():
             if call["time"] >= last_selected["directEndTime"]:
                 activities[ind] = call
                 last_selected = call
+        # We want to return ONLY the activities were added.
         activities = LiftAlgo.remove_calls(activities, self.activities)
         return activities
 
@@ -123,8 +132,43 @@ class LiftAlgo:
         for ind, val in self.df.iterrows():
             self.set_ele(ind, ele_id)
 
-    def spread_equally(self, calls):
-        return
+    @staticmethod
+    def busy_time(ele, call):  # Returns the busy time of direct calls at call direct time
+        # The function returns sum of all calls time frames within the start and finish time of a call.
+        # By this we know the 'usage' of time in each call: call['time'] - call['directEndTime'] is the time it takes
+        # to complete a call if it was delivered directly at the time of call, we will call it tf.
+        # by looking at the tf we can look for the most unused elevator at the time, we calculate how much time is used
+        # in that tf.
+        calls_time = 0
+        for i_call, e_call in ele.activities.items():  # The first time is a dup, I know.
+            if e_call["time"] < call["time"]:
+                # We want to count all calls started before and ends before this call ends.
+                continue
+            elif e_call["directEndTime"] < call["directEndTime"]:
+                # This e_call starts after the call starts and ends before call ends.
+                calls_time += e_call["directEndTime"] - e_call["time"]  # Direct Call Time
+            else:
+                return calls_time
+        return calls_time
+
+    def spread_calls(self, calls):
+        # We know for a fact that the call with the smallest finish line was selected first thus it won't be here.
+        for ind in calls:
+            min_ele = self.b.elevators[0]
+            min_time = -1  # Direct call time
+            for ele in self.b.elevators:
+                calls_time = self.busy_time(ele, calls[ind])
+                if min_time == -1:
+                    min_ele = ele
+                    min_time = calls_time
+                elif calls_time < min_time:
+                    min_ele = ele
+                    min_time = calls_time
+            self.set_ele(ind, min_ele.id)
+            for e in self.b.elevators:
+                if e.id == min_ele.id:
+                    e.activities = e.activities | {ind: calls[ind]}
+                    break
 
     @staticmethod
     def remove_calls(calls, calls_to_remove):
@@ -136,17 +180,17 @@ class LiftAlgo:
     def greedy_algo(self):
         unassigned = self.df.to_dict('index')
         while len(unassigned) > 0:
-            max_activities = []
+            max_activities = {}
             max_ele = None
-            for e in self.b.elevators:
+            for e in self.b.elevators:  # Find the algorithm that has the most assigned at once.
                 ele_max = e.greedy_activity_selector(unassigned)
                 if len(ele_max) > len(max_activities) or (len(ele_max) == len(max_activities) and
-                                                          type(max_ele) is not None and
+                                                          max_ele is not None and
                                                           e.get_n_calls() < max_ele.get_n_calls()):
                     max_activities = ele_max
                     max_ele = e
             if len(max_activities) == 0:
-                return self.spread_equally(unassigned)
+                return self.spread_calls(unassigned)
             for e in self.b.elevators:
                 if e.id == max_ele.id:
                     e.activities = e.activities | max_activities
