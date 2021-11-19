@@ -45,6 +45,8 @@ The algorithm is a greedy algorithm which means it look for the most with the lo
 
 First, I implemented the algorithm as described in the presentation here:
 ![](https://github.com/ofirrubin/OOP-Ex1/blob/c3976cbeb03e73e40c55e2f902c860d0b5a399a7/Media/activity%20selection%20algorithm.png) 
+This is an optimal algorithm.
+
 
 But this algorithm don't solve the problem entirely as we need to complete all task - not the most, so I chose to do the following:
 For every elevator we are throwing all possible unassigned calls.
