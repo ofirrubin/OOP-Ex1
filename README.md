@@ -1,15 +1,15 @@
 # OOP-Ex1
 OOP 2021 - Assignment 1
 
-Elevator Simulator
+# Elevator Selection Algorithm
 
-Abstract:
+## Abstract:
 At first I thought I should simulate possibilities using the online algorithm, but in a second thought
 I figured it's the same exact problem we learned at the Algorithms course:
 A greedy algorithm named Greedy Activity Selector.
 Then I had to think of a way of parallel calls, which I chose to solve by looking at the elevator usage at each period of time.
 
-How to run;
+## How to run;
 Please make sure you have the packages described at requirements.txt,
 you might install them by the following command with pip:
 
@@ -32,7 +32,7 @@ For additional help you might use the following command:
 `python <ProgName>.py`
 
 
-Background:
+## Background & Problem Solving:
 At first we had Ex0 which required us to make few algorithms with the following criterias:
 - It has to be an online algorithms
 - There are 2 algorithms required for the task: elevator selector algorithm and elevator dispatcher algorithm.
@@ -55,7 +55,55 @@ Explanation:
 We go through each call left;
 For each call left (k) we go through every elevator and sum every call assigned to the elevator (c) that in the time frame of direct pick and drop of k,
 c has a call time which is the time frame start time, then we calculate for each elevator and a call the time it would take if the elevator were picking the call in time and dropping the call at dest without any stops - I call that start_time:stop_time a time frame.
+We will choose the elevator with the most lowest usage at this time frame which theorethically means that we interrupt the least used elevator- by that we are lowering the avg time per call.
+
+
+# Algorithm:
+//First we want to make the most calls in a row, for that I'm using the Activity Selection Algorithm described above.
+
+### Selection-Algo(unassigned calls, elevators):
+Make a list of unassigned calls.
+
+
+Make a variable to save the elevator that can do the most activities at the time, and the activities that can be done in that time (v1, v2 respectively).
+
+
+While there are calls left:
+
+
+  For each elevator:
+
+  Run with Activity-Selection-Algorithm to find what are the activities that can be done in a row, the most at the given time.
+    
+    
+    Note that while running Activity-Selection-Algorithm we consider the activities assigned to it already to make sure it doesn't interrupt with them, we are looking for additional activities - not in place.
+      If the algorithm gave us most calls that can be done than the highest we have so far, save the elevator as the best for most and the tasks it can do at this time (v1 and v2 respectively)
+      
+      
+  Assign the calls (v2) to elevator that can do the most (v1) and remove the calls from unassigned calls.
+  
+  
+  If we couldn't do any additional activities return Spread-Calls(unassigned calls)
+
+// We want to interrupt the least so find that elevator for each call
+### Spread-Calls(unassigned calls, elevators):
+For each call k:
+
+
+  For each elevator:
+
+
+(minT, minEl) => Check how much time is the elevator been used in the time frame of call k. If it is the lowest of any checked so far save the time and the elevator.
+
+
+Add the call to the selected elevator and update the calls.
 
 
 
-Algorithm:
+### Export():
+For each elevator, go through her assigned activities:
+
+
+For each activity update its assigned elevator in the output file.
+    
+  
