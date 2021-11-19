@@ -94,16 +94,21 @@ class Building:
 
 class LiftAlgo:
     def __init__(self, building_path, calls_path, out_path):
+        # The algorithm gets the building information, elevator information from building .json file,
+        # The calls from calls .csv file
+        # and output if required to .csv file at out_path
         self.paths = {"building": building_path, "calls": calls_path, "out": out_path}
         self.b = None
         self.df = None
 
     def __set_building(self):
+        # Casting the json file to building object to easier use by reading the json and feeding it with kwargs
         with open(self.paths['building'], "r") as j_file:
             j = json.load(j_file)
             self.b = Building(**j)
 
     def __set_dataframe(self):
+        # Sets the dataframe of thiss object by reading the calls and using titled input by creating temporary outfile.
         if os.path.isfile(self.paths['out']):
             os.remove(self.paths['out'])
         with open(self.paths['out'], "a+") as out:
@@ -114,9 +119,11 @@ class LiftAlgo:
         self.df = pd.read_csv(self.paths['out'])  # , usecols=["time", "src", "dest", "ele"]
 
     def set_ele(self, ind, ele_id):
+        # The function sets the elevator id for a given call by index
         self.df.at[ind, 'ele'] = ele_id
 
     def __fill_all(self, ele_id):  # Fill all elevators with specific id, for single elevator use.
+        # For single elevator case we can fill all by the only elevator.
         for ind, val in self.df.iterrows():
             self.set_ele(ind, ele_id)
 
@@ -160,30 +167,32 @@ class LiftAlgo:
 
     @staticmethod
     def remove_calls(calls, calls_to_remove):
-        for key in calls_to_remove:
+        for key in calls_to_remove:  # For each call with a given key, remove the call
             if key in calls:
                 del calls[key]
         return calls
 
-    def greedy_algo(self):
+    def greedy_algo(self):  # The selection algorithm, uses both greedy algorithms chosen to maximize calls in a time.
         unassigned = self.df.to_dict('index')
-        while len(unassigned) > 0:
+        while len(unassigned) > 0:  # While we have unassigned calls
             max_activities = {}
             max_ele = None
             for e in self.b.elevators:  # Find the algorithm that has the most assigned at once.
+                # the maximum additional calls the elevator can take in a sequence, without parallel calls.
                 ele_max = e.greedy_activity_selector(unassigned)
                 if len(ele_max) > len(max_activities) or (len(ele_max) == len(max_activities) and
                                                           max_ele is not None and
                                                           e.get_n_calls() < max_ele.get_n_calls()):
-                    max_activities = ele_max
+                    max_activities = ele_max  # replace if we found a better one
                     max_ele = e
-            if len(max_activities) == 0:
+            if len(max_activities) == 0: # We can't find an elevator to take those calls in a sequence
+                # thus we must interrupt elevators with the calls left
                 return self.spread_calls(unassigned)
-            for e in self.b.elevators:
+            for e in self.b.elevators:  # Find the elevator in the list and add the calls to it.
                 if e.id == max_ele.id:
                     e.activities = e.activities | max_activities
                     break
-            unassigned = LiftAlgo.remove_calls(unassigned, max_activities)
+            unassigned = LiftAlgo.remove_calls(unassigned, max_activities)  # Remove the assigned calls
 
     def start(self):
         # (re)load data from file
